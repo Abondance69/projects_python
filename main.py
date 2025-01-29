@@ -1,46 +1,35 @@
-import os
-import pandas as pd
-import PyPDF2
+from fastapi import FastAPI
+from action import file_to_svg
+from database.database import connect_to_database
+import api.routes as routes
 
-files = [
-    "data/airlines.json",
-    "data/flights.xlsx",
-    "data/airports.xlsx",
-    "data/weather.pdf",
-    "data/planes.html"
-]
+app = FastAPI()
 
-output_dir = "output"
-os.makedirs(output_dir, exist_ok=True)
+connect_to_database()
+file_to_svg()
 
-for file in files:
-    filename, extension = os.path.splitext(os.path.basename(file))
-    extension = extension[1:].lower()
+app.include_router(routes.router)
 
-    if extension == "json":
-        df = pd.read_json(file)
-    elif extension in ["xls", "xlsx"]:
-        df = pd.read_excel(file)
-    elif extension == "html":
-        tables = pd.read_html(file)
-        df = tables[0] if tables else pd.DataFrame()
-    elif extension == "pdf":
-        text = ""
+@app.get("/")
+def home():
+    return {"message": "Bienvenue sur l'API des vols !"}
 
-        with open(file, "rb") as pdf_file:
-            reader = PyPDF2.PdfReader(pdf_file)
-            for page in reader.pages:
-                if page.extract_text():
-                    text += page.extract_text() + "\n"
+# # traitement de données :
+# airports = op.all_airports()
+# count_total_airports = op.count_total_airports()
+# count_planes = op.count_planes()
+# count_airports_no_summer_time = op.count_airports_no_summer_time()
+# most_used_departure_airport = op.most_used_departure_airport()
 
-        lines = [line.split(",") for line in text.split("\n") if line.strip()]
+# top_10_destinations = op.top_10_destinations()
+# bottom_10_destinations = op.bottom_10_destinations()
+# top_10_planes = op.top_10_planes()
+# bottom_10_planes = op.bottom_10_planes()
+# destinations_per_airline = op.destinations_per_airline()
 
-        df = pd.DataFrame(lines)
+# destinations_per_airline = op.destinations_per_airline()
+# destinations_per_airline_per_origin = op.destinations_per_airline_per_origin()
 
-    else:
-        print(f"⚠ Format non supporté : {file}")
-        continue
-
-    csv_file_path = os.path.join(output_dir, f"{filename}.csv")
-    df.to_csv(csv_file_path, index=False, header=False, encoding="utf-8")
-    print(f"✅ Fichier CSV créé : {csv_file_path}")
+# print(top_10_destinations)
+# print(bottom_10_destinations)
+# print(top_10_planes)
